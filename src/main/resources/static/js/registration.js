@@ -31,6 +31,19 @@ registrationButton.addEventListener('click', async () => {
         const publicKeyCredential = await navigator.credentials.create( {
             publicKey: credentialCreationOptions
         });
+
+        const registrationResponseJSON = publicKeyCredential.toJSON();
+        await fetch("api/auth/registration/finish", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'username': username,
+                'registrationResponseJSON': JSON.stringify(registrationResponseJSON)
+            })
+        });
+
     } catch (error) {
         console.log("Registration failed:", error);
     }
