@@ -46,13 +46,12 @@ public class AuthenticationController {
                 PublicKeyCredentialType.PUBLIC_KEY,
                 COSEAlgorithmIdentifier.ES256
         );
-        var pubKeyCredList = List.of(pubKeyCredParams);
 
         return new PublicKeyCredentialCreationOptions(
                 rp,
                 newUser,
                 challenge,
-                pubKeyCredList,
+                List.of(pubKeyCredParams),
                 null,
                 Collections.emptyList(),
                 null,
