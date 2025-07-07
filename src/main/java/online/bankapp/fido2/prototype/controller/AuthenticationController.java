@@ -23,7 +23,7 @@ public class AuthenticationController {
     public PublicKeyCredentialCreationOptions RegistrationStart(@RequestBody RegistrationDto dto) {
         try {
             log.info("Starting registration process for user: {}", dto.getUsername());
-            var rp = new PublicKeyCredentialRpEntity("fido2-prototype", "localhost");
+            var rp = new PublicKeyCredentialRpEntity("localhost", "localhost");
 
             UUID id = UUID.randomUUID();
             var response = getPublicKeyCredentialCreationOptions(dto, id, rp);

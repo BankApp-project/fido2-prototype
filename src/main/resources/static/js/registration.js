@@ -21,16 +21,16 @@ registrationButton.addEventListener('click', async () => {
             throw new Error(`Server responded with ${response.status}`);
         }
 
-        const responseBodyText = await response.text();
-        //check response body
-        console.log("response body: " + responseBodyText)
-
-        const publicKeyCredentialCreationOptionsJSON = JSON.parse(responseBodyText);
-        console.log("response body @JSON: " + publicKeyCredentialCreationOptionsJSON)
+        const publicKeyCredentialCreationOptionsJSON = await response.json()
+        console.log("response body @JSON: ", publicKeyCredentialCreationOptionsJSON)
 
         const credentialCreationOptions =
             PublicKeyCredential.parseCreationOptionsFromJSON(publicKeyCredentialCreationOptionsJSON);
-        console.log("parsed response body: " + credentialCreationOptions)
+        console.log("parsed response body: ", credentialCreationOptions)
+
+        const publicKeyCredential = await navigator.credentials.create( {
+            publicKey: credentialCreationOptions
+        });
     } catch (error) {
         console.log("Registration failed:", error);
     }
