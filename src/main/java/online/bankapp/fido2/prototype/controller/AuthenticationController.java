@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,10 +21,22 @@ public class AuthenticationController {
 
     @PostMapping("/registration/start")
     public PublicKeyCredentialCreationOptions RegistrationStart(@RequestBody RegistrationDto dto) {
+        try {
+            log.info("Starting registration process for user: {}", dto.getUsername());
+            var rp = new PublicKeyCredentialRpEntity("fido2-prototype", "localhost");
 
-        var rp = new PublicKeyCredentialRpEntity("fido2-prototype", "localhost");
+            UUID id = UUID.randomUUID();
+            var response = getPublicKeyCredentialCreationOptions(dto, id, rp);
+            log.info("Response about to send: {}", response);
+            
+            return response;
+        } catch (Exception e) {
+            log.info("Exception occurred: {}", e.getMessage());
+            return null;
+        }
+    }
 
-        UUID id = UUID.randomUUID();
+    private PublicKeyCredentialCreationOptions getPublicKeyCredentialCreationOptions(RegistrationDto dto, UUID id, PublicKeyCredentialRpEntity rp) {
         var bytes = id.toString().getBytes();
         var newUser = new PublicKeyCredentialUserEntity(bytes, dto.getUsername(), dto.getUsername());
 
@@ -39,7 +52,13 @@ public class AuthenticationController {
                 rp,
                 newUser,
                 challenge,
-                pubKeyCredList
+                pubKeyCredList,
+                null,
+                Collections.emptyList(),
+                null,
+                Collections.emptyList(),
+                null,
+                null
         );
     }
 }
