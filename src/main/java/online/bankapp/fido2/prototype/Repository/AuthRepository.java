@@ -8,8 +8,8 @@ import java.util.HashMap;
 
 @Repository
 public class AuthRepository {
-    private HashMap<String, Challenge> challenges;
-    private HashMap<byte[], UserCredentials> credentials;
+    private final HashMap<String, Challenge> challenges;
+    private final HashMap<byte[], UserCredentials> credentials;
 
     public AuthRepository() {
         challenges = new HashMap<>();
@@ -32,10 +32,11 @@ public class AuthRepository {
     }
 
     /**
+     * Adds a challenge associated with a specific username to the repository if it does not already exist.
      *
-     * @param username
-     * @param challenge
-     * @return false if username already taken, true if operations was successful
+     * @param username the username to associate the challenge with
+     * @param challenge the challenge to be stored
+     * @return true if the challenge was successfully added, false if a challenge already exists for the given username
      */
     public boolean addChallenge(String username, Challenge challenge) {
         return this.challenges.putIfAbsent(username, challenge) == null;

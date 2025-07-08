@@ -45,7 +45,10 @@ public class AuthenticationController {
             log.info("Response about to send: {}", response);
 
             //store challenge in in-memory db/session
-            authRepo.addChallenge(dto.getUsername(), response.getChallenge());
+            if (!authRepo.addChallenge(dto.getUsername(), response.getChallenge())) {
+                log.warn("Challenge already exists in DB!");
+                return null;
+            }
 
             return response;
         } catch (Exception e) {
@@ -58,7 +61,7 @@ public class AuthenticationController {
     @PostMapping("/registration/finish")
     public String RegistrationFinish(@RequestBody RegistrationFinishDto dto) {
 
-        RegistrationData registrationData = null;
+        RegistrationData registrationData;
         try {
             registrationData = webAuthnManager.parseRegistrationResponseJSON(dto.getRegistrationResponseJSON());
         } catch (Exception e) {
