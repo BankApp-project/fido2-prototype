@@ -46,18 +46,6 @@ public class AuthRepository {
         return this.challenges.putIfAbsent(username, challenge) == null;
     }
 
-
-    /**
-     * Checks whether the provided challenge matches the stored challenge for the given username.
-     *
-     * @param username the username associated with the challenge to be compared
-     * @param challenge the challenge to be checked against the stored challenge
-     * @return true if the provided challenge matches the stored challenge for the username, false otherwise
-     */
-    public boolean challengeMatches(String username, Challenge challenge) {
-        return this.challenges.get(username).equals(challenge);
-    }
-
     /**
      * Retrieves the challenge associated with the given username.
      *
