@@ -37,10 +37,8 @@ public class RegistrationController {
     public ResponseEntity<PublicKeyCredentialCreationOptions> RegistrationStart(@RequestBody RegistrationStartDto dto) {
         try {
             log.info("Starting registration process for user: {}", dto.getUsername());
-            var rp = new PublicKeyCredentialRpEntity("localhost", "localhost");
 
-            UUID id = UUID.randomUUID();
-            var response = getPublicKeyCredentialCreationOptions(dto, id, rp);
+            var response = getPublicKeyCredentialCreationOptions(dto.getUsername(), "localhost");
             log.info("Response about to send: {}", response);
 
             //store challenge in in-memory db
@@ -58,9 +56,13 @@ public class RegistrationController {
         }
     }
 
-    private PublicKeyCredentialCreationOptions getPublicKeyCredentialCreationOptions(RegistrationStartDto dto, UUID id, PublicKeyCredentialRpEntity rp) {
+    private PublicKeyCredentialCreationOptions getPublicKeyCredentialCreationOptions(String username, String rpId) {
+        var rp = new PublicKeyCredentialRpEntity(rpId, rpId);
+
+        UUID id = UUID.randomUUID();
         var bytes = id.toString().getBytes();
-        var newUser = new PublicKeyCredentialUserEntity(bytes, dto.getUsername(), dto.getUsername());
+
+        var newUser = new PublicKeyCredentialUserEntity(bytes, username, username);
 
         Challenge challenge = new DefaultChallenge();
 
@@ -85,7 +87,6 @@ public class RegistrationController {
                 null
         );
     }
-
     @PostMapping("/registration/finish")
     public ResponseEntity<Void> RegistrationFinish(@RequestBody RegistrationFinishDto dto) {
         RegistrationData registrationData;
