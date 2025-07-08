@@ -28,11 +28,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/auth")
-public class AuthenticationController {
+public class RegistrationController {
 
-    //check how to use `WebAuthnManager`
-    //im not sure this static constructor is fine. Didn't check it yet.
-    //to continue: https://webauthn4j.github.io/webauthn4j/en/#registering-the-webauthn-public-key-credential-on-the-server
     private final WebAuthnManager webAuthnManager = WebAuthnManager.createNonStrictWebAuthnManager();
     private final AuthRepository authRepo;
 
@@ -46,7 +43,8 @@ public class AuthenticationController {
             var response = getPublicKeyCredentialCreationOptions(dto, id, rp);
             log.info("Response about to send: {}", response);
 
-            //store challenge in in-memory db/session
+            //store challenge in in-memory db
+            //HashMap FTW
             if (!authRepo.addChallenge(dto.getUsername(), response.getChallenge())) {
                 log.warn("Challenge already exists in DB!");
                 return ResponseEntity.status(HttpStatus.CONFLICT).build();
@@ -58,6 +56,34 @@ public class AuthenticationController {
             log.info("Exception occurred: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    private PublicKeyCredentialCreationOptions getPublicKeyCredentialCreationOptions(RegistrationStartDto dto, UUID id, PublicKeyCredentialRpEntity rp) {
+        var bytes = id.toString().getBytes();
+        var newUser = new PublicKeyCredentialUserEntity(bytes, dto.getUsername(), dto.getUsername());
+
+        Challenge challenge = new DefaultChallenge();
+
+        //in prod this should be list of credentials that given user has
+        List<PublicKeyCredentialDescriptor> excludeList = Collections.emptyList();
+
+        AuthenticatorSelectionCriteria authenticatorSelection = new AuthenticatorSelectionCriteria(
+                null,
+                ResidentKeyRequirement.PREFERRED, // REQUIRED for true passwordless experience, PREFERRED for compatibility
+                UserVerificationRequirement.REQUIRED // User verification REQUIRED for biometric security
+        );
+        return new PublicKeyCredentialCreationOptions(
+                rp,
+                newUser,
+                challenge,
+                PublicKeyCredentialsParametersProvider.getPubKeyCredParamList(),
+                60000L, //60s
+                excludeList,
+                authenticatorSelection,
+                Collections.emptyList(),
+                AttestationConveyancePreference.NONE, //Controls how much information server wants to receive about the authenticator
+                null
+        );
     }
 
     @PostMapping("/registration/finish")
@@ -81,8 +107,7 @@ public class AuthenticationController {
         }
 
         // expectations
-        var pubKeyCredParams = List.of(PublicKeyCredentialsParametersProvider.getPubKeyCredParam());
-         /* U SURE? */
+        List<PublicKeyCredentialParameters> pubKeyCredParams = PublicKeyCredentialsParametersProvider.getPubKeyCredParamList();
         boolean userVerificationRequired = false;
         boolean userPresenceRequired = true;
 
@@ -120,25 +145,5 @@ public class AuthenticationController {
         log.info("Registration/finish process completed for user: {}", dto.getUsername());
         log.info("Congrats! You are our {} new user", authRepo.credentialsSize());
         return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    private PublicKeyCredentialCreationOptions getPublicKeyCredentialCreationOptions(RegistrationStartDto dto, UUID id, PublicKeyCredentialRpEntity rp) {
-        var bytes = id.toString().getBytes();
-        var newUser = new PublicKeyCredentialUserEntity(bytes, dto.getUsername(), dto.getUsername());
-
-        Challenge challenge = new DefaultChallenge();
-
-        return new PublicKeyCredentialCreationOptions(
-                rp,
-                newUser,
-                challenge,
-                List.of(PublicKeyCredentialsParametersProvider.getPubKeyCredParam()),
-                null,
-                Collections.emptyList(),
-                null,
-                Collections.emptyList(),
-                null,
-                null
-        );
     }
 }
