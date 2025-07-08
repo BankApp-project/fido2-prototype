@@ -16,6 +16,10 @@ public class AuthRepository {
         credentials = new HashMap<>();
     }
 
+    public int credentialsSize() {
+        return credentials.size();
+    }
+
     /**
      * Adds a credential to the repository if it does not already exist.
      *

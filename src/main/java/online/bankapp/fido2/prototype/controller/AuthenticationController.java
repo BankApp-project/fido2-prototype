@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import online.bankapp.fido2.prototype.Repository.AuthRepository;
 import online.bankapp.fido2.prototype.model.UserCredentials;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,7 +37,7 @@ public class AuthenticationController {
     private final AuthRepository authRepo;
 
     @PostMapping("/registration/start")
-    public PublicKeyCredentialCreationOptions RegistrationStart(@RequestBody RegistrationStartDto dto) {
+    public ResponseEntity<PublicKeyCredentialCreationOptions> RegistrationStart(@RequestBody RegistrationStartDto dto) {
         try {
             log.info("Starting registration process for user: {}", dto.getUsername());
             var rp = new PublicKeyCredentialRpEntity("localhost", "localhost");
@@ -47,42 +49,41 @@ public class AuthenticationController {
             //store challenge in in-memory db/session
             if (!authRepo.addChallenge(dto.getUsername(), response.getChallenge())) {
                 log.warn("Challenge already exists in DB!");
-                return null;
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
             }
 
-            return response;
+            log.info("Registration/start process completed for user: {}", dto.getUsername());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.info("Exception occurred: {}", e.getMessage());
-            return null;
+            return ResponseEntity.internalServerError().build();
         }
     }
 
-    //Return viable HTTP CODES
     @PostMapping("/registration/finish")
-    public String RegistrationFinish(@RequestBody RegistrationFinishDto dto) {
-
+    public ResponseEntity<Void> RegistrationFinish(@RequestBody RegistrationFinishDto dto) {
         RegistrationData registrationData;
         try {
             registrationData = webAuthnManager.parseRegistrationResponseJSON(dto.getRegistrationResponseJSON());
         } catch (Exception e) {
             log.info("Error parsing registration response: {}", e.getMessage());
-            return null;
+            return ResponseEntity.internalServerError().build();
         }
 
         // Server properties
-        Origin origin = new Origin("http://localhost");
+        Origin origin = new Origin("http://localhost:8080");
         String rpId = "localhost";
         Challenge challenge = authRepo.getChallenge(dto.getUsername());
         ServerProperty serverProperty = new ServerProperty(origin, rpId, challenge);
         if (challenge == null) {
             log.warn("Challenge doesn't exists!");
-            return null;
+            return ResponseEntity.badRequest().build();
         }
 
         // expectations
         var pubKeyCredParams = List.of(PublicKeyCredentialsParametersProvider.getPubKeyCredParam());
          /* U SURE? */
-        boolean userVerificationRequired = true;
+        boolean userVerificationRequired = false;
         boolean userPresenceRequired = true;
 
         var registrationParameters = new RegistrationParameters(serverProperty, pubKeyCredParams, userVerificationRequired, userPresenceRequired);
@@ -91,8 +92,8 @@ public class AuthenticationController {
             //verify if request is from valid source
             webAuthnManager.verify(registrationData, registrationParameters);
         } catch (VerificationException e) {
-            log.warn("Error during registration request validation!");
-            return null;
+            log.warn("Error during registration request validation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         CredentialRecord credentialRecord =
@@ -114,10 +115,11 @@ public class AuthenticationController {
 
         if (!authRepo.saveCredential(credentialId, newCredentials)) {
             log.warn("This credentialId already exists in DB!");
-            return null;
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
-
-        return null;
+        log.info("Registration/finish process completed for user: {}", dto.getUsername());
+        log.info("Congrats! You are our {} new user", authRepo.credentialsSize());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     private PublicKeyCredentialCreationOptions getPublicKeyCredentialCreationOptions(RegistrationStartDto dto, UUID id, PublicKeyCredentialRpEntity rp) {
@@ -125,7 +127,6 @@ public class AuthenticationController {
         var newUser = new PublicKeyCredentialUserEntity(bytes, dto.getUsername(), dto.getUsername());
 
         Challenge challenge = new DefaultChallenge();
-
 
         return new PublicKeyCredentialCreationOptions(
                 rp,
