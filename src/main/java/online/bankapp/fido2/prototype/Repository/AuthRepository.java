@@ -1,6 +1,7 @@
 package online.bankapp.fido2.prototype.Repository;
 
 import com.webauthn4j.data.client.challenge.Challenge;
+import online.bankapp.fido2.prototype.model.UserCredentials;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
@@ -8,9 +9,26 @@ import java.util.HashMap;
 @Repository
 public class AuthRepository {
     private HashMap<String, Challenge> challenges;
+    private HashMap<byte[], UserCredentials> credentials;
 
     public AuthRepository() {
         challenges = new HashMap<>();
+        credentials = new HashMap<>();
+    }
+
+    /**
+     * Adds a credential to the repository if it does not already exist.
+     *
+     * @param credentialId the unique identifier for the credentials, represented as a byte array
+     * @param credentials the credentials to be added, encapsulating user and authentication details
+     * @return true if the credential was successfully added, false if it already exists
+     */
+    public boolean saveCredential(byte[] credentialId, UserCredentials credentials) {
+        return this.credentials.putIfAbsent(credentialId, credentials) == null;
+    }
+
+    public UserCredentials loadCredentials(byte[] credentialId) {
+        return this.credentials.get(credentialId);
     }
 
     /**
