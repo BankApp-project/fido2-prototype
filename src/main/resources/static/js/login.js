@@ -1,12 +1,13 @@
-const registrationButton = document.getElementById("registration-button");
-registrationButton.addEventListener('click', async () => {
-    console.log("Registration button was clicked")
+const loginButton = document.getElementById("login-button");
+loginButton.addEventListener('click', async () => {
+    console.log("Login button was clicked")
 
     try {
         /** @type {HTMLInputElement} */
-        const usernameElement = document.getElementById("username-input");
+        const usernameElement = document.getElementById("login-username-input");
         const username = usernameElement.value;
 
+        //its not needed to send username now, but it will be needed later on
         const response = await fetch('api/auth/challenge', {
             method: 'POST',
             headers: {
@@ -29,12 +30,12 @@ registrationButton.addEventListener('click', async () => {
             PublicKeyCredential.parseCreationOptionsFromJSON(publicKeyCredentialCreationOptionsJSON);
         console.log("parsed response body: ", credentialCreationOptions)
 
-        const publicKeyCredential = await navigator.credentials.create( {
+        const publicKeyCredential = await navigator.credentials.get( {
             publicKey: credentialCreationOptions
         });
 
-        const registrationResponseJSON = publicKeyCredential.toJSON();
-        await fetch("api/auth/registration/finish", {
+        const authenticationResponseJSON = publicKeyCredential.toJSON();
+        await fetch("api/auth/auth", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -42,11 +43,11 @@ registrationButton.addEventListener('click', async () => {
             },
             body: JSON.stringify({
                 'username': username,
-                'registrationResponseJSON': JSON.stringify(registrationResponseJSON)
+                'authenticationResponseJSON': JSON.stringify(authenticationResponseJSON)
             })
         });
 
     } catch (error) {
-        console.log("Registration failed:", error);
+        console.log("Authentication failed:", error);
     }
 })
