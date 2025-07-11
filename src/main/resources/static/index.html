@@ -2,21 +2,100 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FIDO2-Prototype</title>
+    <title>Login Flow</title>
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-<h2>Login</h2>
-<label for="login-username-input"></label>
-<input type="text" id="login-username-input" placeholder="Enter your email">
-<button id = "login-button">Login</button>
 
-<h2>Register</h2>
-<label for="username-input"></label>
-<input type="text" id="username-input" placeholder="Enter your email">
-<button id = "registration-button">Register</button>
+<h1>FIDO2 Prototype</h1>
+
+<div id="welcome-view">
+    <button id="continue-button">Continue</button>
+</div>
+
+<div id="email-view" class="hidden">
+    <input id="email-input" type="email">
+    <button id="email-button">Submit Email</button>
+</div>
+
+<div id="email-confirm-view" class="hidden">
+    <input id="pin-input" type="number">
+    <button id="pin-button">Submit PIN</button>
+    <button id="resend-email-button">Resend Email</button>
+</div>
+
+<div id="logged-in-view" class="hidden">
+   <h2>You are authenticated. Congrats!</h2>
+</div>
+<!-- End of HTML -->
 
 
+<script>
+    function getCookie(name) {
+        const cookieString = document.cookie;
+        if (cookieString.length === 0) {
+            return null;
+        }
+        const cookies = cookieString.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Check if this cookie string begins with the name we want
+            if (cookie.startsWith(name + '=')) {
+                return cookie.substring(name.length + 1);
+            }
+        }
+        return null;
+    }
+    console.log("lets start!")
+    let knownDevice = false;
+    console.log("knownDevice: " + knownDevice);
+    if (getCookie("knownDevice") === "true") {
+        console.log("inside if block");
+        knownDevice = true;
+    } else {
+        console.log("inside else block");
+        knownDevice = false;
+    }
+    console.log("after if statement");
+    console.log("knownDevice: " + knownDevice);
+
+    const welcomeDiv = document.getElementById("welcome-view");
+    const emailDiv = document.getElementById("email-view");
+
+    if (!knownDevice) {
+        showEmailView();
+    }
+
+    //i know this is antipattern, but this is prototype.
+    const emailButton2 = document.getElementById("email-button");
+    const emailConfirmView = document.getElementById("email-confirm-view");
+    emailButton2.addEventListener('click', async () => {
+        emailDiv.classList.add('hidden');
+        emailConfirmView.classList.remove('hidden');
+    })
+
+    const loggedInView = document.getElementById("logged-in-view");
+    function showEmailView() {
+        welcomeDiv.classList.add('hidden');
+        emailConfirmView.classList.add('hidden');
+        loggedInView.classList.add('hidden');
+
+        emailDiv.classList.remove('hidden');
+    }
+
+    function showLoggedInView() {
+        welcomeDiv.classList.add('hidden');
+        emailConfirmView.classList.add('hidden');
+        emailDiv.classList.add('hidden');
+
+        loggedInView.classList.remove('hidden');
+    }
+</script>
+<script src="js/continue.js"></script>
 <script src="js/registration.js"></script>
-<script src="js/login.js"></script>
 </body>
 </html>

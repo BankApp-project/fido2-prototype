@@ -1,21 +1,11 @@
-const loginButton = document.getElementById("login-button");
-loginButton.addEventListener('click', async () => {
-    console.log("Login button was clicked")
+const continueButton = document.getElementById("continue-button");
+continueButton.addEventListener('click', async () => {
+    console.log("Continue button was clicked")
 
     try {
-        /** @type {HTMLInputElement} */
-        const usernameElement = document.getElementById("login-username-input");
-        const username = usernameElement.value;
 
-        //its not needed to send username now, but it will be needed later on
         const response = await fetch('api/auth/login/challenge/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                'username': username
-            })
+            method: 'GET'
         });
         // Check if the request was successful
         if (!response.ok) {
@@ -34,20 +24,27 @@ loginButton.addEventListener('click', async () => {
         });
 
         const authenticationResponseJSON = publicKeyCredential.toJSON();
-        const msg = await fetch("api/auth/login", {
+        const msg = await fetch('api/auth/login/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Session-ID': response.headers.get('Session-ID')
             },
             body: JSON.stringify({
-                'username': username,
                 'authenticationResponseJSON': JSON.stringify(authenticationResponseJSON)
             })
         });
 
-        const msgtext = await msg.text();
-        alert(msgtext);
+        //fallback
+        console.log("msg status: ", msg.status);
+        if (!msg.ok) {
+            alert("Authentication failed. Please provide your email address.");
+            showEmailView();
+        } else {
+            const msgtext = await msg.text();
+            console.log("msgtext: ", msgtext);
+            alert(msgtext);
+        }
 
     } catch (error) {
         console.log("Authentication failed:", error);

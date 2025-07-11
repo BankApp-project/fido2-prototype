@@ -1,11 +1,17 @@
-const registrationButton = document.getElementById("registration-button");
-registrationButton.addEventListener('click', async () => {
-    console.log("Registration button was clicked")
+const emailButton = document.getElementById("email-button");
+emailButton.addEventListener('click', async () => {
+    console.log("Email button was clicked")
+    //there will be logic to send request with email to BE, but we wont implement it in this prototype
+})
+
+const pinButton = document.getElementById("pin-button");
+pinButton.addEventListener('click', async () => {
+    console.log("Pin confirmation button was clicked");
 
     try {
         /** @type {HTMLInputElement} */
-        const usernameElement = document.getElementById("username-input");
-        const username = usernameElement.value;
+        const emailElement = document.getElementById("email-input");
+        const email = emailElement.value;
 
         const response = await fetch('api/auth/registration/challenge', {
             method: 'POST',
@@ -13,7 +19,7 @@ registrationButton.addEventListener('click', async () => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                'username': username
+                'username': email
             })
         });
         // Check if the request was successful
@@ -34,17 +40,29 @@ registrationButton.addEventListener('click', async () => {
         });
 
         const registrationResponseJSON = publicKeyCredential.toJSON();
-        await fetch("api/auth/registration/finish", {
+        const msg = await fetch("api/auth/registration/finish", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Session-ID': sessionId
             },
             body: JSON.stringify({
-                'username': username,
+                'username': email,
                 'registrationResponseJSON': JSON.stringify(registrationResponseJSON)
             })
         });
+
+
+        if (!msg.ok) {
+            alert("Registration failed. Please try again.");
+            showEmailView();
+            throw new Error(`Server responded with ${msg.status}`);
+        } else {
+            const msgtext = await msg.text();
+            console.log("msgtext: ", msgtext);
+            alert(msgtext);
+            showLoggedInView();
+        }
 
     } catch (error) {
         console.log("Registration failed:", error);
