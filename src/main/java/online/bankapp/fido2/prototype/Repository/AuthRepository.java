@@ -43,7 +43,7 @@ public class AuthRepository {
      * @param challenge the challenge to be stored, typically used for authentication or registration processes
      * @return true if the challenge was successfully added, false if a challenge already exists for the given UUID
      */
-    public boolean addChallenge(UUID uuid, Challenge challenge) {
+    public boolean saveChallenge(UUID uuid, Challenge challenge) {
         return this.challenges.putIfAbsent(uuid, challenge) == null;
     }
 
