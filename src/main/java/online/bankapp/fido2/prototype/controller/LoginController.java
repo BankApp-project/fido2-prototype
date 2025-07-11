@@ -35,7 +35,7 @@ public class LoginController {
 
     @PostMapping("/")
     public ResponseEntity<String> Login(@RequestBody AuthDto dto, @RequestHeader("Session-ID") UUID sessionUuid) {
-        log.info("Starting authentication process for user: {}", dto.getUsername());
+        log.info("Starting authentication process");
         log.info("DB SIZE: {}", authRepo.credentialsSize());
         AuthenticationData authenticationData;
         try {
@@ -66,14 +66,14 @@ public class LoginController {
             log.warn("Error during authentication request validation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-        //TODO: there should also be something like updating counter of the authenicatior record, why and how?
+        //TODO: there should also be updating counter of the authenicatior record
         log.info("Auth process finished for user: {}", credentials.getUsername());
         return ResponseEntity.ok()
                 .header("Session-ID", sessionUuid.toString())
-                .body(String.format("Welcome %s!", credentials.getUsername()));
+                .body(String.format("Welcome %s!", credentials.getUsername())); //there we will send jwt token instead
     }
 
-    @PostMapping("/challenge/")
+    @GetMapping("/challenge/")
     public ResponseEntity<PublicKeyCredentialRequestOptions> AuthChallenge() {
         try {
             log.info("Starting auth process");

@@ -14,10 +14,13 @@ import online.bankapp.fido2.prototype.controller.dto.RegistrationFinishDto;
 import online.bankapp.fido2.prototype.controller.dto.RegistrationStartDto;
 import online.bankapp.fido2.prototype.model.UserCredentials;
 import online.bankapp.fido2.prototype.service.AuthService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -90,7 +93,7 @@ public class RegistrationController {
 
 
     @PostMapping("/registration/finish")
-    public ResponseEntity<Void> RegistrationFinish(@RequestBody RegistrationFinishDto dto, @RequestHeader("Session-ID") UUID sessionUuid) {
+    public ResponseEntity<String> RegistrationFinish(@RequestBody RegistrationFinishDto dto, @RequestHeader("Session-ID") UUID sessionUuid) {
         RegistrationData registrationData;
         try {
             registrationData = webAuthnManager.parseRegistrationResponseJSON(dto.getRegistrationResponseJSON());
@@ -134,10 +137,21 @@ public class RegistrationController {
             log.warn("This credentialId already exists in DB!");
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
+
+        ResponseCookie knownDevice = ResponseCookie.from("knownDevice", "true")
+                .httpOnly(false)
+                .secure(false)
+                .path("/")
+                .maxAge(Duration.ofDays(30))
+                .sameSite("Lax")
+                .build();
+
         log.info("Registration/finish process completed for user: {}", dto.getUsername());
         log.info("RegCredentialId: {}", credentialId);
         log.info("Congrats! You are our {} new user", authRepo.credentialsSize());
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header(HttpHeaders.SET_COOKIE, knownDevice.toString())
+                .body(String.format("Welcome %s!", dto.getUsername())); //there we will send jwt token instead
     }
 
 }
