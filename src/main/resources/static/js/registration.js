@@ -7,7 +7,7 @@ registrationButton.addEventListener('click', async () => {
         const usernameElement = document.getElementById("username-input");
         const username = usernameElement.value;
 
-        const response = await fetch('api/auth/challenge', {
+        const response = await fetch('api/auth/registration/challenge', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
